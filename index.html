@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1 class="title">ToDoList</h1>
+        <div class="adddiv">
+            <h3>添加</h3>
+            <div style="margin-top: 15px;">
+                <el-input placeholder="请输入内容" v-model="item">
+                    <el-button slot="append" style="background-color: #409eff;color: #fff;" icon="el-icon-plus"></el-button>
+                </el-input>
+            </div>
+        </div>
+        <el-divider></el-divider>
+        <div class="list">
+            <h3>待办事项</h3>
+            <div>
+                <el-radio-group v-model="type">
+                <el-radio-button label="全部"></el-radio-button>
+                <el-radio-button label="已完成"></el-radio-button>
+                <el-radio-button label="未完成"></el-radio-button>
+                </el-radio-group>
+            </div>
+            <!-- list -->
+            <el-table
+                :data="tableData"
+                height="350"
+                header-align="center"
+                align="center"
+                :row-class-name="tableRowClassName">
+                <el-table-column
+                prop="date"
+                label="日期">
+                </el-table-column>
+                <el-table-column
+                prop="name"
+                label="姓名">
+                </el-table-column>
+                <el-table-column label="操作">
+                    <template slot-scope="scope">
+                      <el-button
+                        size="mini"
+                        @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+                      <el-button
+                        size="mini"
+                        type="danger"
+                        @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+                    </template>
+                  </el-table-column>
+            </el-table>
+        </div>
+    </div>
+</body>
+</html>
+<style>
+    #app{
+        width: 60%;
+        margin: 0 auto;
+        /* border: solid 1px #42b983;
+        border-radius: 10px; */
+    }
+    .title {
+        font-weight: bold;
+    }
+    .adddiv {
+        width: 500px;
+    }
+    .el-table .warning-row {
+        background: oldlace;
+    }
+
+    .el-table .success-row {
+        background: #f0f9eb;
+    }
+</style>
+<script>
+    var app = new Vue({
+    el: '#app',
+    data: {
+        item: '',
+        type: '全部',
+        tableData: [{
+            date: '2016-05-02',
+            name: 'ddddddddddddddddddddddddddddddddddddddd',
+            address: '上海市普陀区金沙江路 1518 弄'
+          },
+          {
+            date: '2016-05-02',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄'
+          },
+          {
+            date: '2016-05-02',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄'
+          },
+          {
+            date: '2016-05-02',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄'
+          },
+          {
+            date: '2016-05-02',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄'
+          },
+          {
+            date: '2016-05-02',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄'
+          },
+          {
+            date: '2016-05-02',
+            name: '王小虎',
+            address: '上海市普陀区金沙江路 1518 弄'
+          }]
+    },
+    methods: {
+        tableRowClassName({row, rowIndex}) {
+            if (rowIndex === 1) {
+                return 'warning-row';
+            } else if (rowIndex === 3) {
+                return 'success-row';
+            }
+            return '';
+        }
+    }
+    })
+</script>
