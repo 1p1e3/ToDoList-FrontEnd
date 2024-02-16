@@ -3,62 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>ToDoList📌</title>
+    <!-- 引入 Vue2 -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
-    <!-- 引入样式 -->
+    <!-- 引入 element-ui -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-    <!-- 引入组件库 -->
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入 axios -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
+    <!-- vue app 根盒子 -->
     <div id="app">
         <h1 class="title">ToDoList</h1>
+        <!-- 1. 添加计划 -->
         <div class="adddiv">
             <h3>添加</h3>
             <div style="margin-top: 15px;">
-                <el-input placeholder="请输入内容" v-model="item">
-                    <el-button slot="append" style="background-color: #409eff;color: #fff;" icon="el-icon-plus" @click="add"></el-button>
+                <!-- 添加计划输入框 + 提交按钮，绑定 add 方法 -->
+                <el-input placeholder="开启一个计划吧！⏱️" v-model="todo">
+                    <el-button
+                    slot="append"
+                    style="background-color: #409eff;color: #fff;"
+                    icon="el-icon-plus"
+                    @click="add">
+                </el-button>
                 </el-input>
             </div>
         </div>
+
+        <!-- 分隔线 -->
         <el-divider></el-divider>
+
+        <!-- 2. 计划列表 -->
         <div class="list">
-            <h3>待办事项</h3>
-            <div>
-                <el-radio-group v-model="type" @change="get">
-                <el-radio-button label="全部"></el-radio-button>
-                <el-radio-button label="已完成"></el-radio-button>
-                <el-radio-button label="未完成"></el-radio-button>
-                </el-radio-group>
+            <!-- 
+                展示待完成和已完成计划数量：
+                finishedNum：已完成数量
+                createdNum：待完成数量
+            -->
+            <div style="display: flex; align-items: center;">
+                <h3>计划列表</h3>
+                <el-tag type="success" style="margin-left: 20px;">已完成: {{finishedNum}}</el-tag>
+                <el-tag type="danger" style="margin-left: 10px;">待完成: {{createdNum}}</el-tag>
             </div>
-            <!-- list -->
-            <el-table :data="tableData" height="350" :row-class-name="tableRowClassName">
+            <!-- 展示总共的计划，不包括已删除的 -->
+            <el-table :data="todolist" height="350" style="width: 100%">
                 <el-table-column prop="ID" label="ID"></el-table-column>
                 <el-table-column prop="Name" label="事项"></el-table-column>
+                <el-table-column label="状态">
+                    <!-- 
+                        判断 Status 的值：
+                        Status = 1，则显示待完成标签；
+                        Status = 2，则显示已完成标签。
+                    -->
+                    <template slot-scope="scope">
+                        <el-tag type="danger" v-if="scope.row.Status === 1">待完成</el-tag>
+                        <el-tag type="success" v-if="scope.row.Status === 2">已完成</el-tag>
+                    </template>
+                </el-table-column>
+                <!-- 
+                    待完成的计划展示完成和删除按钮，已完成的计划仅展示，没有任何操作。
+                    和上面的状态标签一样，都是通过 v-if 去判断 Status 的值，来控制按钮的现实和隐藏
+                -->
                 <el-table-column label="操作">
                     <template slot-scope="scope">
-                      <el-button
+                        <el-button
                         size="mini"
                         type="primary"
-                        @click="handleEdit(scope.$index, scope.row)">完成</el-button>
-                      <el-button
+                        v-if="scope.row.Status == 1"
+                        @click="finish(scope.$index, scope.row)">完成</el-button>
+                        <el-button
                         size="mini"
                         type="danger"
-                        @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+                        v-if="scope.row.Status == 1"
+                        @click="del(scope.$index, scope.row)">删除</el-button>
                     </template>
                 </el-table-column>
             </el-table>
-        </div>
+        </div>  
     </div>
 </body>
 </html>
 <style>
+    /* 根盒子居中 */
     #app{
         width: 60%;
         margin: 0 auto;
-        /* border: solid 1px #42b983;
-        border-radius: 10px; */
     }
     .title {
         font-weight: bold;
@@ -66,99 +97,98 @@
     .adddiv {
         width: 500px;
     }
-    .el-table .warning-row {
-        background: oldlace;
-    }
-
-    .el-table .success-row {
-        background: #f0f9eb;
-    }
 </style>
 <script>
+    // 创建 vue 实例
     var app = new Vue({
     el: '#app',
     data: {
-        item: '',
-        addmsg: '',
-        addresult: '',
-        type: '全部',
-        tableData: null
+        todo: '',  // 计划
+        todolist: [], // 计划列表数据
+        finishedNum: 0, // 完成计划数
+        createdNum: 0 // 待完成计划数
     },
     methods: {
+        // 添加计划
         add() {
-            if (this.item == '') {
-                this.$message.error('事项不能为空');
+            // 如果 todo 属性为空，则表示用户并没有输入就点击了 + 按钮
+            // 此时需要提示用户
+            if (this.todo == '') {
+                this.$message.error('事项不能为空！😓');
+            } else {
+                axios({
+                method: 'post',
+                url: 'http://127.0.0.1:8080/todo',
+                data: {
+                    name: this.todo
+                }
+                })
+                this.$message({
+                message: '添加成功！😉',
+                type: 'success'
+                })
+                // 1s 之后重新加载页面，目的是重新请求一次，获得新添加的计划
+                setTimeout(() => {
+                    window.location.reload()
+                }, 1000)
             }
+        },
+        // 完成计划，给接口传计划的 id
+        finish(index, row) {
+            let that = this
             axios({
-            method: 'post',
-            url: 'http://127.0.0.1:8080/todo',
-            data: {
-                name: this.item
-            }
+                method: 'post',
+                url: 'http://127.0.0.1:8080/finish',
+                data: {
+                    id: row.ID
+                }
             })
             this.$message({
-            message: '添加成功',
-            type: 'success'
+                message: '太棒了！🎉',
+                type: 'success'
             })
+            setTimeout(() => {
+                window.location.reload()
+            }, 1000)
         },
-        get() {
-            if (this.type == '全部') {
-                axios({
+        // 删除计划，同样也是给接口传计划 id
+        del(index, row) {
+            let that = this
+            axios({
                 method: 'post',
-                url: 'http://127.0.0.1:8080/todolist',
+                url: 'http://127.0.0.1:8080/delete',
                 data: {
-                    w: "all"
+                    id: row.ID
                 }
-                }).then(function (response) {
-                    for (let i = 0; i < response.data.data.length; i++) {
-                        this.tableData[i] = response.data.data[i]
-                    }
-                    console.log(this.tableData);
-                })
-            }
-            if (this.type == '已完成') {
-                axios({
-                method: 'post',
-                url: 'http://127.0.0.1:8080/todolist',
-                data: {
-                    w: "finished"
-                }
-                }).then(function (response) {
-                    this.tableData = response.data.data
-                })
-            }
-            if (this.type == '未完成') {
-                axios({
-                method: 'post',
-                url: 'http://127.0.0.1:8080/todolist',
-                data: {
-                    w: "created"
-                }
-                }).then(function (response) {
-                    this.tableData = response.data.data
-                })
-            }
-        },
-        tableRowClassName({row, rowIndex}) {
-            if (rowIndex === 1) {
-                return 'warning-row';
-            } else if (rowIndex === 3) {
-                return 'success-row';
-            }
-            return '';
+            })
+            this.$message({
+                message: '这件事推迟了吗？🤔',
+                type: 'success'
+            })
+            setTimeout(() => {
+                window.location.reload()
+            }, 1000)
         }
-
     },
-    beforeMount() {
+    // 在组件挂在完成之后给获取计划列表接口发送请求
+    // mounted() 方法每次刷新页面都会指向
+    // 使用 mounted() 方法目的是为了在每次刷新页面的时候都去获取最新的数据
+    mounted() {
+        let that = this
         axios({
-            method: 'post',
-            url: 'http://127.0.0.1:8080/todolist',
-            data: {
-                w: "all"
-            }
+            method: 'get',
+            url: 'http://127.0.0.1:8080/todo',
             }).then(function (response) {
-                this.tableData = response.data.data
-                console.log(this.tableData);
+                that.todolist = response.data.data
+                that.todolist.reverse() // 反转 todolist，让新添加的计划在列表的头部显示
+                // for 循环统计待完成和已完成的计划数量
+                for (let i = 0; i < that.todolist.length; i++) {
+                    if (that.todolist[i].Status === 1) {
+                        that.createdNum++
+                    } else {
+                        that.finishedNum++
+                    }
+                }
             })
         }
     })
